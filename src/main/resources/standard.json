@@ -1,0 +1,11 @@
+{
+  "Relation": {
+    "TestRelation": {
+      "leftCardinality": "MANY",
+      "rightCardinality": "MANY"
+    }
+  },
+  "Kind": {
+    "TestKind": {}
+  }
+}
