@@ -232,7 +232,7 @@ public class Cardinality1SetTest {
         assertTrue(instance.equals(otherSet));
         otherSet.add(new Object());
         assertFalse(instance.equals(otherSet));
-        assertFalse("equals() should ensure the other object is a set", instance.equals(Collections.singleton(object)));
+        assertFalse("equals() should ensure the other object is a set", instance.equals(Arrays.asList(object)));
         assertFalse("equals() should reject nulls", instance.equals(null));
     }
 
