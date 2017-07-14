@@ -28,17 +28,13 @@ class RelationDescription implements Supplier<Relation> {
 
     private final Registry _registry;
 
-    RelationDescription(String name) {
-        this(name, Registry.INSTANCE);
-    }
-
     RelationDescription(String name, Registry registry) {
         _registry = registry;
     }
 
     @Override
     public Relation get() {
-        return new RelationWithPredicates(leftCardinality, rightCardinality, leftPredicate, rightPredicate).register();
+        return new RelationWithPredicates(leftCardinality, rightCardinality, leftPredicate, rightPredicate);
     }
 
     Predicate<Object> predicateFor(JSONObject json, String key) {
@@ -62,7 +58,7 @@ class RelationDescription implements Supplier<Relation> {
             if (_kind == null) {
                 _kind = _registry.get(_kindName, KindOfThing.class);
             }
-            return _kind.contains(((Thing)o).getId());
+            return _kind.contains(((Thing)o));
         }
 
         @Override

@@ -6,18 +6,23 @@ import java.util.Objects;
 
 public class Registry {
 
-    public static final Registry INSTANCE = new Registry(new HashMap<>());
+    private final Map<String, Object> _namedEntries;
+    private final Map<Class<?>, EntryIDTracker> _idTrackers;
 
-    private final Map<String, Object> _entries;
+    public Registry() {
+        this(new HashMap<>(), new HashMap<>());
+    }
 
     /**
-     * A constructor that allows manual injection of a map of entries. Note that this map
-     * is <strong>not</strong> defensively copied! In effect, this registry acts as a view
-     * of that map.
-     * @param entries the entry map
+     * A constructor that allows manual injection of the underlying maps. This
+     * creates, in effect, a view of the injected maps, which is useful for
+     * testing.
+     * @param entries a map to hold entries, by name
+     * @param idTrackers a map to hold lists of entries, by class
      */
-    Registry(Map<String, Object> entries) {
-        _entries = entries;
+    Registry(Map<String, Object> entries, Map<Class<?>, EntryIDTracker> idTrackers) {
+        _namedEntries = entries;
+        _idTrackers = idTrackers;
     }
 
     /**
@@ -32,31 +37,50 @@ public class Registry {
      */
     public <T> T get(String name, Class<T> expectedClass) {
         Objects.requireNonNull(name, "name can't be null");
-        Objects.requireNonNull(expectedClass, "expectedClass can't be null");
-        Object value = _entries.get(name);
-        Objects.requireNonNull(value, "couldn't find any " + expectedClass.getSimpleName() + " named " + name);
+        Object value = _namedEntries.get(name);
         return expectedClass.cast(value);
     }
 
-    @Override
-    public String toString() {
-        return _entries.toString();
+    public <T> T get(int id, Class<T> expectedClass) {
+        getIDTracker(expectedClass);
+        Object value = _idTrackers.get(expectedClass).get(id);
+        Objects.requireNonNull(value, "couldn't find any " + expectedClass.getSimpleName() + " with ID " + id);
+        return expectedClass.cast(value);
+    }
+
+    public <T> int getIdFor(T object, Class<? super T> expectedClass) {
+        return getIDTracker(expectedClass).getId(object);
     }
 
     /**
      * Registers a value for some key. Once some {@code value} has been registered,
-     * {@code register(key, value.getClass()} will find the same {@code value}.
+     * {@code register(key, registryClass} will find the same {@code value}.
+     * <p>Registered values must be associated with some class. This class must be
+     * a superclass of the value's actual type. Registry IDs (of type {@code int})
+     * are tracked per registry class.</p>
      * <p>It is an error to register more than one value to the same key.</p>
      * @param key the key to register the object under
      * @param value the object to register
+     * @param registryClass some superclass of {@code value}
      * @throws ParseException if there already is a value at that key/class pair
      */
-    public void add(String key, Object value) throws ParseException {
+    public void add(String key, Object value, Class<?> registryClass) throws ParseException {
         Objects.requireNonNull(key, "key can't be null");
         Objects.requireNonNull(value, "value can't be null");
-        if (_entries.containsKey(key)) {
+        if (_namedEntries.containsKey(key)) {
             throw ParseException.duplicateEntry(key);
         }
-        _entries.put(key, value);
+        getIDTracker(registryClass).add(registryClass.cast(value));
+        _namedEntries.put(key, value);
+    }
+
+    private EntryIDTracker getIDTracker(Class<?> clazz) {
+        Objects.requireNonNull(clazz, "class must not be null");
+        return _idTrackers.computeIfAbsent(clazz, anything -> new EntryIDTracker());
+    }
+
+    @Override
+    public String toString() {
+        return _namedEntries.toString();
     }
 }

@@ -7,11 +7,11 @@ import java.lang.annotation.*;
  * files, whenever a JSON object with a given {@linkplain #name() type} is encountered,
  * an appropriate parse event is constructed, and any non-{@code static}, non-{@code final},
  * non-{@code transient} fields of the event are initialized from that JSON object's properties.
- * After those fields are populated, it is used to get an instance of some other type.
- * <strong>The annotated type must declare a constructor taking a single argument of type
- * String.</strong> The argument will be set from the name supplied in the configuration JSON,
- * or to {@code null} when no name is given. (Note that the {@code transient} property here
- * is only used to configure the parser.)
+ * After those fields are populated, it is used to get an instance of some other type. (Note
+ * that the {@code transient} property here is only used to configure the parser.)
+ * <p>The annotated type must declare a constructor taking exactly two parameters: one of type
+ * {@link String} and one of type {@link Registry}, in that order. The {@code String} parameter
+ * is set to the name of the entry being parsed.</p>
  * <p>The precise procedure for initializing parse event fields is fairly complicated. In
  * general, each applicable field (as defined above) must be of one of the following types:
  * <ul>

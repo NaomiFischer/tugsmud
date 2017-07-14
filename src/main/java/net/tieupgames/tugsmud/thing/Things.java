@@ -1,5 +1,7 @@
 package net.tieupgames.tugsmud.thing;
 
+import net.tieupgames.tugsmud.parser.Registry;
+
 public class Things {
 
     public static final int SPECIAL_BITS = 1;
@@ -13,11 +15,6 @@ public class Things {
     public static final int KIND_ID_MASK = ((1 << KIND_ID_BITS) - 1);
     public static final int ARBITRARY_ID_MASK = ~(KIND_ID_MASK);
 
-    private static final ThingsImpl IMPL = new ThingsImpl(KindFactory.INSTANCE);
-
-    public static Thing getThing(int thingId) {
-        return IMPL.getThing(thingId);
-    }
 
     public static int extractSpecial(int id) {
         return id & SPECIAL_MASK;

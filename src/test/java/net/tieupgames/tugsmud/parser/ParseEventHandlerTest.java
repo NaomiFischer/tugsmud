@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -58,7 +59,7 @@ public class ParseEventHandlerTest {
         @ParseFieldWithConversionFunction("someConversionFunction")
         private Object someFieldWithConversionFunction;
         private final String _name;
-        SomeParseEvent(String name) {
+        SomeParseEvent(String name, Registry registry) {
             _name = name;
         }
         private Object someConversionFunction(JSONObject jsonObject, String key) {
@@ -71,7 +72,7 @@ public class ParseEventHandlerTest {
     private static class DeadlyParseEvent {
         @ParseFieldWithConversionFunction("deadlyConversionFunction")
         private String someString;
-        DeadlyParseEvent(String name) {}
+        DeadlyParseEvent(String name, Registry registry) {}
         private Object deadlyConversionFunction(JSONObject jsonObject, String key) throws ReflectiveOperationException {
             throw new ReflectiveOperationException("dummy ROE");
         }
@@ -79,8 +80,8 @@ public class ParseEventHandlerTest {
 
     @ParseEvent(name="SomeSupplierParseEvent", produces=SomeProducedClass.class)
     private static class SomeSupplierParseEvent extends SomeParseEvent implements Supplier<SomeProducedClass> {
-        SomeSupplierParseEvent(String name) {
-            super(name);
+        SomeSupplierParseEvent(String name, Registry registry) {
+            super(name, registry);
         }
         @Override public SomeProducedClass get() {
             return new SomeProducedClass(this, this);
@@ -100,10 +101,9 @@ public class ParseEventHandlerTest {
         }
     }
 
-
-    private void configureMockEventFactory(Function<String, ?> subfactory) throws Exception {
+    private void configureMockEventFactory(BiFunction<String, Registry, ?> subfactory) throws Exception {
         when(mockEventFactory.get(anyString(), any(JSONObject.class), any(Class.class), any(Registry.class))).thenAnswer(
-                invocation -> subfactory.apply((String)invocation.getArguments()[0]));
+                invocation -> subfactory.apply((String)invocation.getArguments()[0], mockRegistry));
     }
 
     @Before
@@ -127,14 +127,14 @@ public class ParseEventHandlerTest {
         ParseEventHandler instance = new ParseEventHandler(mockEventFactory, mockRegistry);
         SomeProducedClass produced = instance.handleEvent(someString, SomeProducedClass.class, SomeParseEvent.class, mockJSONObject);
         assertNotNull(produced);
-        verify(mockRegistry).add(someString, produced);
+        verify(mockRegistry).add(someString, produced, SomeProducedClass.class);
         verify(mockEventFactory).get(someString, mockJSONObject, SomeParseEvent.class, mockRegistry);
 
         // now make sure we use the event's get() method, if it's a supplier
         configureMockEventFactory(SomeSupplierParseEvent::new);
         produced = instance.handleEvent(someString, SomeProducedClass.class, SomeSupplierParseEvent.class, mockJSONObject);
         assertNotNull(produced);
-        verify(mockRegistry).add(someString, produced);
+        verify(mockRegistry).add(someString, produced, SomeProducedClass.class);
         verify(mockEventFactory).get(someString, mockJSONObject, SomeParseEvent.class, mockRegistry);
         assertTrue(produced._calledFromSupplier instanceof SomeSupplierParseEvent);
     }

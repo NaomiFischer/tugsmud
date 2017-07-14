@@ -1,37 +1,59 @@
 package net.tieupgames.tugsmud.thing;
 
+import net.tieupgames.tugsmud.parser.Registry;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ThingTest {
 
-    private final int SOME_ID = 42;
-    private final int SOME_OTHER_ID = 24;
+    private final int someId = 42;
+    private final int someOtherId = 24;
+
+    private final KindOfThing someKind = KindOfThing.get(Thing.class, false);
 
     @Test
     public void getId() throws Exception {
-        int expected = SOME_ID;
-        int result = new Thing(expected).getId();
+        int expected = someId;
+        int result = new Thing(expected, someKind).getId();
         assertEquals(expected, result);
     }
 
     @Test
+    public void constructorIntRegistry() throws Exception {
+        Registry mockRegistry = mock(Registry.class);
+        KindOfThing mockSpecialKind = mock(KindOfThing.class);
+        when(mockRegistry.get(someId, KindOfThing.class)).thenReturn(someKind);
+        when(mockRegistry.get(KindOfThing.SPECIAL_KIND_ID, KindOfThing.class)).thenReturn(mockSpecialKind);
+        assertEquals(someKind, new Thing(someId, mockRegistry).getKind());
+        assertEquals(mockSpecialKind, new Thing(KindOfThing.SPECIAL_KIND_ID | someOtherId, mockRegistry).getKind());
+    }
+
+    @Test
+    public void getKind() throws Exception {
+        assertEquals(someKind, new Thing(someId, someKind).getKind());
+    }
+
+    @Test
     public void testHashCode() throws Exception {
-        Thing instance = new Thing(SOME_ID);
+        Thing instance = new Thing(someId, someKind);
         assertEquals(instance.getId(), instance.hashCode());
     }
 
     @Test
     public void equals() throws Exception {
-        Thing instance = new Thing(SOME_ID);
-        Thing equalInstance = new Thing(SOME_ID);
+        Thing instance = new Thing(someId, someKind);
+        Thing equalInstance = new Thing(someId, someKind);
         assertTrue(instance.equals(equalInstance));
 
-        Thing unequalInstance = new Thing(SOME_OTHER_ID);
+        Thing unequalInstance = new Thing(someOtherId, someKind);
         assertFalse(instance.equals(unequalInstance));
 
-        Thing thingOfWrongClass = new Thing(SOME_ID) {
+        Thing thingOfWrongClass = new Thing(someId, someKind) {
           // just a different class of thing...
         };
         try {
@@ -45,4 +67,8 @@ public class ThingTest {
 
     }
 
+    @Test
+    public void idForNewRegistryEntry() {
+        assertEquals(someId, new Thing(someId, someKind).idForNewRegistryEntry());
+    }
 }

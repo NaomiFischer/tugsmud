@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 public class RelationTest {
 
     private Set<Object> mockCurryLeft = mock(Set.class);
-    private Set<Map.Entry<Object, Object>> mockEntrySet = mock(Set.class);
 
     private Relation<Object, Object> instance = new Relation<Object, Object>() {
 

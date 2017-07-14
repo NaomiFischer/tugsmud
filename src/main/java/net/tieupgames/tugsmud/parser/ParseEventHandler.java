@@ -35,16 +35,18 @@ class ParseEventHandler {
             if (Supplier.class.isAssignableFrom(eventType)) {
                 produced = produces.cast(((Supplier<?>)event).get());
             } else {
-                produced = produces.getDeclaredConstructor(eventType).newInstance(event);
+                Constructor<R> constructor = produces.getDeclaredConstructor(eventType);
+                constructor.setAccessible(true);
+                produced = constructor.newInstance(event);
             }
-            _registry.add(name, produced);
+            _registry.add(name, produced, produces);
             return produced;
     }
 
     static <T> T eventFromJSONObject(String name, JSONObject json, Class<T> eventType, Registry registry) throws ReflectiveOperationException, ParseException {
-        Constructor<T> constructor = eventType.getDeclaredConstructor(String.class);
+        Constructor<T> constructor = eventType.getDeclaredConstructor(String.class, Registry.class);
         constructor.setAccessible(true);
-        T event = constructor.newInstance(name);
+        T event = constructor.newInstance(name, registry);
 
         // initialize each field from the JSON object
         for (Field field : eventType.getDeclaredFields()) {

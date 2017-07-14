@@ -31,12 +31,4 @@ public class ThingsTest {
         int result = Things.extractArbitraryId(thingId);
         assertEquals(arbitraryId, result);
     }
-
-    @Test
-    public void getThing() {
-        try {
-            Things.getThing(0);
-            fail("should have failed to find a kind ID");
-        } catch (IndexOutOfBoundsException e) {}
-    }
 }

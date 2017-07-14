@@ -20,9 +20,4 @@ public interface Relation<L, R> {
         Set<R> curried = curryLeft(left);
         return curried != null && curried.contains(right);
     }
-
-    default Relation<L, R> register() {
-        RelationRegistry.INSTANCE.getId(this);
-        return this;
-    }
 }

@@ -1,15 +1,35 @@
 package net.tieupgames.tugsmud.thing;
 
-public class Thing {
+import net.tieupgames.tugsmud.parser.Identified;
+import net.tieupgames.tugsmud.parser.Registry;
+
+public class Thing implements Identified {
 
    protected final int id;
+   protected final KindOfThing kind;
 
-   public Thing(int id) {
+   public Thing(int id, KindOfThing kind) {
        this.id = id;
+       this.kind = kind;
+   }
+
+   public Thing(int id, Registry registry) {
+       this.id = id;
+       int kindId;
+       if (Things.extractSpecial(id) != 0) {
+           kindId = KindOfThing.SPECIAL_KIND_ID;
+       } else {
+           kindId = Things.extractKindId(id);
+       }
+       kind = registry.get(kindId, KindOfThing.class);
    }
 
    public final int getId() {
        return id;
+   }
+
+   public KindOfThing getKind() {
+       return kind;
    }
 
    @Override
@@ -28,4 +48,8 @@ public class Thing {
       return false;
    }
 
+    @Override
+    public int idForNewRegistryEntry() {
+       return getId();
+    }
 }

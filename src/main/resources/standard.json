@@ -6,6 +6,9 @@
     }
   },
   "Kind": {
-    "TestKind": {}
+    "TestKind": {},
+    "TestSpecialKind": {
+      "special": true
+    }
   }
 }

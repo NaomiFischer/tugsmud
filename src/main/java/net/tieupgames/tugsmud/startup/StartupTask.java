@@ -7,6 +7,6 @@ package net.tieupgames.tugsmud.startup;
  */
 public interface StartupTask {
 
-    void run() throws Exception;
+    void run(Startup startup) throws Exception;
 
 }

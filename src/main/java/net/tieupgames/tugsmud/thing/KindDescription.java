@@ -2,6 +2,7 @@ package net.tieupgames.tugsmud.thing;
 
 import net.tieupgames.tugsmud.parser.OptionalParseField;
 import net.tieupgames.tugsmud.parser.ParseEvent;
+import net.tieupgames.tugsmud.parser.Registry;
 
 import java.util.function.Supplier;
 
@@ -10,28 +11,29 @@ import java.util.function.Supplier;
 class KindDescription implements Supplier<KindOfThing> {
 
     @OptionalParseField
-    Class<? extends Thing> thingClass = Thing.class;
+    private Class<? extends Thing> thingClass = Thing.class;
 
     @OptionalParseField
-    boolean special;
+    private boolean special;
 
-    final String name;
-    final KindFactory factory;
+    private final String _name;
+    private final Registry _registry;
 
-    KindDescription(String name) {
-        this(name, KindFactory.INSTANCE);
+    KindDescription(String name, Registry registry) {
+        _name = name;
+        _registry = registry;
     }
 
-    KindDescription(String name, KindFactory factory) {
-        this.name = name;
-        this.factory = factory;
+    Class<? extends Thing> getThingClass() {
+        return thingClass;
+    }
+
+    boolean isSpecial() {
+        return special;
     }
 
     @Override
     public KindOfThing get() {
-        if (special) {
-            return factory.createSpecialKind(thingClass);
-        }
-        return factory.createKind(thingClass);
+        return KindOfThing.get(thingClass, special);
     }
 }

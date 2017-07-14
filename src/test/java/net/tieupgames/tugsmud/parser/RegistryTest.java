@@ -2,12 +2,13 @@ package net.tieupgames.tugsmud.parser;
 
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class RegistryTest {
@@ -18,22 +19,23 @@ public class RegistryTest {
     private static final String someOtherString = "there is actually a string";
     private static final Object someOtherObject = new Object();
 
+    private final Map<String, Object> entries = new HashMap<>();
+    private final Map<Class<?>, EntryIDTracker> idTrackers = new HashMap<>();
+
+    private final Registry instance = new Registry(entries, idTrackers);
+
     @Test
-    public void get() throws Exception {
-        Map<String, Object> map = new HashMap<>();
-        map.put(someString, someObject);
-        map.put(someOtherString, someOtherObject);
-        Registry instance = new Registry(map);
+    public void getStringClass() throws Exception {
+        entries.put(someString, someObject);
+        entries.put(someOtherString, someOtherObject);
 
         // ensure that we can find registered values
         assertEquals(someObject, instance.get(someString, someObject.getClass()));
         assertEquals(someOtherObject, instance.get(someOtherString, someOtherObject.getClass()));
 
         // and that we don't find values we don't have
-        try {
-            instance.get("this isn't present", someObject.getClass());
-            fail("lookup should have failed with a NullPointerException");
-        } catch (NullPointerException e) {}
+        Object result = instance.get("this isn't present", someObject.getClass());
+        assertEquals(null, result);
         try {
             instance.get(someString, Void.class);
             fail("lookup should have failed with a ClassCastException");
@@ -51,17 +53,40 @@ public class RegistryTest {
     }
 
     @Test
-    public void add() throws Exception {
-        Map<String, Object> map = new HashMap<>();
-        Registry instance = new Registry(map);
-        instance.add(someString, someObject);
+    public void getIntClass() throws Exception {
+        int key = 80085;
+        EntryIDTracker tracker = mock(EntryIDTracker.class);
+        when(tracker.get(key)).thenReturn(someObject);
+        idTrackers.put(someObject.getClass(), tracker);
+        Object result = instance.get(key, someObject.getClass());
+        assertEquals(someObject, result);
+        verify(tracker).get(key);
+    }
 
-        assertEquals(someObject, map.get(someString));
-        assertEquals("too many values were registered",1, map.size());
+    @Test
+    public void getIdFor() throws Exception {
+        int key = 80085;
+        EntryIDTracker tracker = mock(EntryIDTracker.class);
+        when(tracker.getId(someObject)).thenReturn(key);
+        idTrackers.put(Object.class, tracker);
+        int result = instance.getIdFor(someObject, Object.class);
+        assertEquals(result, key);
+    }
+
+    @Test
+    public void add() throws Exception {
+        instance.add(someString, someObject, someObject.getClass());
+
+        assertEquals(someObject, entries.get(someString));
+        assertEquals("too many values were registered", 1, entries.size());
+
+        // ensure objects are written to the entry tracker
+        assertTrue(idTrackers.containsKey(someObject.getClass()));
+        assertEquals(someObject, idTrackers.get(someObject.getClass()).get(0));
 
         // ensure we get a ParseException on duplicate entries
         try {
-            instance.add(someString, someObject);
+            instance.add(someString, someObject, someObject.getClass());
             fail("should have gotten a ParseException on duplicate entries");
         } catch (ParseException e) {
             assertEquals(ParseException.Reason.DUPLICATE_ENTRY, e.getReason());
@@ -69,27 +94,29 @@ public class RegistryTest {
 
         // ensure we throw out nulls
         try {
-            instance.add(null, someObject.getClass());
+            instance.add(null, someObject, someObject.getClass());
             fail("should have thrown a NullPointerException");
         } catch(NullPointerException e) {}
         try {
-            instance.add(someString, null);
+            instance.add(someString, null, someObject.getClass());
             fail("should have thrown a NullPointerException");
         } catch(NullPointerException e) {}
     }
 
     @Test
-    public void testToString() {
-        @SuppressWarnings("unchecked")
+    public void testToString() throws Exception {
+        @SuppressWarnings("unchecked") // mocking generics
         Map<String, Object> mockMap = mock(Map.class);
         when(mockMap.toString()).thenReturn(someString);
-        String result = new Registry(mockMap).toString();
+        String result = new Registry(mockMap, Collections.emptyMap()).toString();
         assertEquals(someString, result);
     }
 
     @Test
-    public void lookup() throws Exception {
-        Registry.INSTANCE.add(someString, someObject);
-        Registry.INSTANCE.get(someString, someObject.getClass());
+    public void defaultConstructor() throws Exception {
+        Registry instance = new Registry();
+        instance.add(someString, someObject, someObject.getClass());
+        Object result = instance.get(someString, someObject.getClass());
+        assertEquals(someObject, result);
     }
 }
